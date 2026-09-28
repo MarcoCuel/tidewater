@@ -225,7 +225,7 @@ export function buildHouse( ctx, s ) {
 
 	const st = {
 		trim: s.trim, accent: s.accent, curtain: s.curtain || lin( 0xd8c8a8 ),
-		paint: s.paint ?? 0.7, trimPaint: ( s.paint ?? 0.7 ) + 0.16, weather: s.weather ?? 0.6,
+		paint: s.paint ?? 0.8, trimPaint: ( s.paint ?? 0.8 ) + 0.10, weather: s.weather ?? 0.2,
 		shutters: s.shutters || 'louver', doorGlass: !! s.doorGlass, litChance: s.litChance ?? 0.6,
 		stepTint: s.porchPaint || null, stepPaint: s.porchPaint ? 0.5 : 0,
 	};
@@ -1212,8 +1212,8 @@ export function buildBoathouse( ctx, s ) {
 	const base = gMax;
 	const yE = base + 2.7;
 	const wall = s.wall || lin( 0x9fb9b0 );
-	const paint = s.paint ?? 0.55;
-	const wdat = ( pat ) => [ rand.next(), paint, pat, 0.8 ];
+	const paint = s.paint ?? 0.7;
+	const wdat = ( pat ) => [ rand.next(), paint, pat, 0.35 ];
 	B.pushAt( x, 0, z, yaw );
 
 	// posts
@@ -1499,8 +1499,8 @@ export function buildShed( ctx, s ) {
 	const base = gMax + 0.22;
 	const hF = 2.3, hB = 1.95, t = 0.05;
 	const col = s.wall || lin( 0x9aa7a0 );
-	const paint = s.paint ?? 0.45;
-	const wd = ( pat ) => [ rand.next(), paint, pat, 0.9 ];
+	const paint = s.paint ?? 0.65;
+	const wd = ( pat ) => [ rand.next(), paint, pat, 0.35 ];
 	B.pushAt( x, 0, z, yaw );
 	for ( const sx of [ - 1, 1 ] ) for ( const sz of [ - 1, 1 ] ) {
 

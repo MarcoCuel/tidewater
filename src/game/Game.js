@@ -33,11 +33,12 @@ export class Game {
 		this.state.load();
 		this.rod = new FishingRod( { scene: app.scene, camera: app.camera, query: app.query, terrain: app.terrainData, audio: app.audio } );
 		this.rod.onLand = ( where ) => this.onBobberLanded( where );
-		this.stand = new FishStand( { scene: app.scene, terrain: app.terrainData, colliders: app.colliders } );
-		this.display = new CatchDisplay( { scene: app.scene, stall: this.stand.iceFish() } );
+		// this.stand = new FishStand( { scene: app.scene, terrain: app.terrainData, colliders: app.colliders } );
+		// this.display = new CatchDisplay( { scene: app.scene, stall: this.stand.iceFish() } );
+		this.display = new CatchDisplay( { scene: app.scene, stall: [] } );
 		this.landing = null; // { species, kg } while the caught fish swings in view
-		this.chandlery = new Chandlery( { scene: app.scene, terrain: app.terrainData, colliders: app.colliders, material: this.stand.material } );
-		this.vendors = [ this.stand.vendor, this.chandlery.vendor ];
+		// this.chandlery = new Chandlery( { scene: app.scene, terrain: app.terrainData, colliders: app.colliders, material: this.stand.material } );
+		this.vendors = []; // [ this.stand.vendor, this.chandlery.vendor ];
 		// boat upgrades: engine (thrust / top speed) and deck floodlights for night fishing
 		const b = app.boatCtl;
 		this._engineBase = { maxThrust: b.maxThrust, pitchSpeed: b.pitchSpeed };

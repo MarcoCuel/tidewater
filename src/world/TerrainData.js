@@ -822,11 +822,9 @@ export class TerrainData {
 					const e = - d;
 					// the beach proper runs just past the berm crest; behind it sandy soil grades
 					// into the village lawn, while the dunes away from the village stay sandy
-					const beach = bz * ( 1 - smoothstep( 36 + nz * 10, 50 + nz * 14, e ) );
-					const backBeach = bz * 0.45 * ( 1 - smoothstep( 60 + nz * 20, 100 + nz * 20, e ) );
-					const vd = Math.hypot( ( x - VILLAGE.x ) * 0.8, z - VILLAGE.z );
-					const away = smoothstep( 80, 120, vd ) * smoothstep( 14, 30, Math.abs( x - WORLD.pier.x ) );
-					const dune = bz * away * ( 1 - smoothstep( 4.5 + nz * 2, 7 + nz * 2, h ) ) * ( 1 - smoothstep( 110, 140, e ) );
+					const beach = bz * ( 1 - smoothstep( 100 + nz * 10, 125 + nz * 14, e ) );
+					const backBeach = bz * 0.45 * ( 1 - smoothstep( 125 + nz * 20, 155 + nz * 20, e ) );
+					const dune = bz * ( 1 - smoothstep( 5.5 + nz * 2, 8 + nz * 2, h ) ) * ( 1 - smoothstep( 115, 140, e ) );
 					const cove = ( 1 - smoothstep( 6, 16, e ) ) * ( 1 - smoothstep( 0.25, 0.5, rk ) ) * ( 1 - smoothstep( 1.8, 3.2, h ) ) * ( 1 - smoothstep( 0.12, 0.3, slope ) );
 					sd = Math.max( beach, backBeach, dune, cove ) * ( 1 - smoothstep( 0.3, 0.6, slope ) );
 

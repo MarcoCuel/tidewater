@@ -44,7 +44,7 @@ export function buildPier( { B, terrain, colliders, rand, lights, inst, signB = 
 	const capTop = stringerTop - PIER.stringerH;
 	const capBot = capTop - PIER.capH;
 	const ground = ( x, z ) => terrain.heightAt( x, z );
-	const pierWood = ( w0 = 0.6, w1 = 0.95 ) => WOOD( rand.next(), rand.range( w0, w1 ), 0, 0 );
+	const pierWood = ( w0 = 0.15, w1 = 0.4 ) => WOOD( rand.next(), rand.range( w0, w1 ), 0, 0 );
 	// timber tone per piece: most boards close to the average, some dark (water-stained, oily) or
 	// pale (sun-bleached, recently planed) - an old pier is a patchwork of repairs
 	const tone = () => {

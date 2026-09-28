@@ -21,7 +21,7 @@ export const lin = ( hex ) => {
 export const mulc = ( c, k ) => [ c[ 0 ] * k, c[ 1 ] * k, c[ 2 ] * k ];
 
 // vdata helpers
-export const WOOD = ( seed, weather = 0.7, paint = 0, pattern = 0 ) => [ seed, paint, pattern, weather ];
+export const WOOD = ( seed, weather = 0.3, paint = 0, pattern = 0 ) => [ seed, paint, pattern, weather ];
 export const HARD = ( seed, rust = 0, metal = 0, rough = 0.5 ) => [ seed, rust, metal, rough ];
 
 export const C = {
