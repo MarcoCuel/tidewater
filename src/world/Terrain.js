@@ -341,7 +341,7 @@ const TERRAIN_SURFACE = /* wgsl */`
 			* ( 1.0 - smoothstep( 50.0, 220.0, camDist ) * 0.85 );
 		// forest on the higher / steeper ground and in the gullies, tall-grass meadow on the valley
 		// floor and around the village (same classification as the vegetation's land cover)
-		let jungleW = sat( smoothstep( 9.0, 24.0, h + ( mcr - 0.5 ) * 18.0 ) + smoothstep( 0.18, 0.36, slope ) + gully * 0.6 );
+		let jungleW = sat( smoothstep( 0.38, 0.55, slope ) + gully * 0.6 );
 		// landslide scars: raw red-brown laterite in streaks down steep slopes, rare
 		let lateriteW = smoothstep( 0.62, 0.74, scar + ( macroB - 0.5 ) * 0.3 ) * smoothstep( 0.3, 0.42, slope )
 			* smoothstep( 0.52, 0.66, mcr ) * notRock * 0.85;
@@ -459,7 +459,7 @@ const TERRAIN_SURFACE = /* wgsl */`
 		// inside the geometric grass field (GrassField) the ground is only seen between the blades:
 		// the shaded base of the sward, dark and brownish with dead leaves; it hands over to the
 		// sward's own look (above) where the blades thin out
-		let grassHere = smoothstep( 2.5, 4.5, h ) * ( 1.0 - smoothstep( 0.45, 0.85, jungleW ) ) * ( 1.0 - sat( sp.x * 1.6 ) );
+		let grassHere = smoothstep( 2.5, 3.5, h ) * ( 1.0 - smoothstep( 0.35, 0.7, rockW ) ) * ( 1.0 - sat( sp.x * 1.6 ) );
 		let fieldK = ( 1.0 - smoothstep( ${ GRASS_FADE[ 0 ].toFixed( 1 ) }, ${ GRASS_FADE[ 1 ].toFixed( 1 ) }, length( p.xz - frame.cameraPos.xz ) ) ) * grassHere;
 		let swardBase = mix( mt.tone * 0.4, MEADOW_soil, 0.4 ) * ( ( dN.y - 0.45 ) * 0.6 + 1.0 ) * ( ( dF.y - 0.4 ) * 0.3 + 1.0 );
 		lawn = mix( lawn, swardBase, fieldK * 0.85 );

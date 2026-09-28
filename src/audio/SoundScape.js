@@ -510,10 +510,15 @@ export class SoundScape {
 		const muffle2 = lowpass( 20000, 0.54, this.aboveOut );
 		const muffle1 = lowpass( 20000, 0.707, muffle2 );
 		this.muffle = [ muffle1, muffle2 ];
-		this.above = gain( 1, muffle1 );
+		
+		this.interior = gain( 1, muffle1 );
+		this.houseGain = gain( 1, this.interior );
+		this.houseLP = lowpass( 20000, 0.707, this.houseGain );
+		this.above = gain( 1, this.houseLP ); // 'above' agora = exterior
+
 		this.under = gain( 0, this.master );
 		this.near = gain( 1, this.master );
-		this.foot = gain( 1, this.above );
+		this.foot = gain( 1, this.interior );
 
 		// distant surf: from the shore direction
 		this.surfPan = panner( this.above, 1, 0 );
@@ -522,7 +527,7 @@ export class SoundScape {
 		// the boat: positional from outside; at the helm it surrounds you (through the hull), unpanned
 		this.boatPan = panner( this.above, 3, 1 );
 		this.boatOut = gain( 1, this.boatPan );
-		this.boatIn = gain( 0, this.above );
+		this.boatIn = gain( 0, this.interior );
 		this.boatSum = gain( 1, this.boatOut );
 		this.boatSum.connect( this.boatIn );
 		this.engineLP = lowpass( 1200, 0.6, this.boatSum );
@@ -534,11 +539,11 @@ export class SoundScape {
 		if ( this.rodPan ) {
 
 			this.rodPan.pan.value = 0.25;
-			this.rodPan.connect( this.above );
+			this.rodPan.connect( this.interior );
 
 		}
 
-		this.rod = gain( 1, this.rodPan || this.above );
+		this.rod = gain( 1, this.rodPan || this.interior );
 
 		// whale song: positional at the whale, its own path (open underwater, faint and dull from above)
 		this.songOut = gain( dB( - 20 ), this.master );
@@ -971,6 +976,7 @@ export class SoundScape {
 		e.wind = clamp( num( s.windSpeed, 7 ), 0, 40 );
 		e.day = clamp( num( s.daylight, 1 ), 0, 1 );
 		e.nearPier = !! s.nearPier;
+		e.houseOcclusion = clamp( num( s.houseOcclusion, 0 ), 0, 1 );
 		e.hour = typeof s.timeOfDay === 'number' && Number.isFinite( s.timeOfDay ) ? ( ( s.timeOfDay % 24 ) + 24 ) % 24 : null;
 		const b = s.boat || EMPTY, bp = b.position || EMPTY, eb = e.boat;
 		eb.active = !! b.active;
@@ -1033,6 +1039,12 @@ export class SoundScape {
 		this._ramp( this.muffle[ 1 ].frequency, Math.min( 20000, f * 1.4 ), 0.04 );
 		this._ramp( this.aboveOut.gain, lerp( 1, 0.4 / ( 1 + e.depth / 5 ), u ), 0.05 );
 		this._ramp( this.under.gain, u, 0.06 );
+
+		// house occlusion: muffle exterior bus
+		const occ = e.houseOcclusion || 0;
+		this._ramp( this.houseGain.gain, lerp( 1, 0.25, occ ), 0.15 ); // -12 dB
+		this._ramp( this.houseLP.frequency, lerp( 20000, 900, occ ), 0.15 );
+
 		const wantUnder = u > 0 || ( ! e.onLand && e.ly < 2.5 );
 		this._bed( 'under_reef', wantUnder ? dB( MIX.reef ) * ( 0.8 + 0.3 * deep ) / dB( BANK.under_reef.lufs ) : 0, now, 0.5 );
 		if ( wantUnder ) {

@@ -187,7 +187,7 @@ export class VegSite {
 		const mA = this.detail( ax / 173, az / 173, 3 ), mB = this.detail( bx / 47, bz / 47, 3 );
 		const macro = mA * 0.6 + mB * 0.4;
 		const gully = this._mask( t.gully, x, z, 1 / 255 ) * smoothstep( - 0.5, 0.5, h );
-		const forest = clamp( smoothstep( 9, 24, h + ( macro - 0.5 ) * 18 ) + smoothstep( 0.18, 0.36, slope ) + gully * 0.6, 0, 1 );
+		const forest = clamp( smoothstep( 9, 24, h + ( macro - 0.5 ) * 10 ) + smoothstep( 0.28, 0.45, slope ) + gully * 0.6, 0, 1 );
 		const rock = this.rock( x, z );
 		out.h = h; out.ny = ny; out.slope = slope; out.macro = macro; out.mA = mA; out.mB = mB;
 		out.gully = gully; out.forest = forest; out.rock = rock;
@@ -672,7 +672,7 @@ export function buildGrassMask( site ) {
 
 			// tall meadow grass on the open ground, thinning into the forest; trodden near houses
 			const house = site.hasVillage ? 1 - 0.55 * ( 1 - smoothstep( 3, 9, od ) ) : ( 1 - 0.85 * ( 1 - smoothstep( RULES.villageRadius - 6, RULES.villageRadius + 4, site.villageDist( x, z ) ) ) );
-			const meadow = smoothstep( 2.5, 4.5, c.h ) * ( 1 - smoothstep( 0.45, 0.85, c.forest ) ) * ( 1 - smoothstep( 0.3, 0.7, c.sand ) ) * house
+			const meadow = smoothstep( 2.5, 3.5, c.h ) * ( 1 - smoothstep( 0.3, 0.7, c.sand ) ) * house
 				* ( 0.75 + 0.25 * smoothstep( - 0.4, 0.3, clump ) );
 
 			// Backshore vegetation edge (in the bay): driven by the ground height above the sea, so it
@@ -713,11 +713,11 @@ export function buildGrassMask( site ) {
 				// patchy sward: dense clumps (a few metres), thinner stretches and bare sand gaps
 				const patch = N2.noise( x / 4.2 + 5.5, z / 4.2 - 3.3 ) * 0.6 + N.noise( x / 11 - 7.1, z / 11 + 1.9 ) * 0.4;
 				const clumpD = ( 0.3 + 0.7 * smoothstep( - 0.45, 0.25, patch ) ) * ( 0.6 + 0.4 * smoothstep( - 0.35, 0.35, clump ) );
-				dune = Math.max( main * clumpD, ahead * 0.85 ) * inland * ( 1 - smoothstep( 0.4, 0.8, c.forest ) );
+				dune = Math.max( main * clumpD * 0.6, ahead * 0.5 ) * inland * ( 1 - smoothstep( 0.4, 0.8, c.forest ) );
 				// the face: sparse tufts hanging on (more near the lip)
 				dune = dune * ( 1 - onFace ) + onFace * 0.18 * smoothstep( 0.7, 1.0, c.scarp ) * smoothstep( 0.0, 0.4, patch );
 				// sea oats: fore-dune tufts just behind the edge
-				oats = smoothstep( 0.0, 0.25, e ) * ( 1 - smoothstep( 1.4, 2.2, e ) ) * smoothstep( 0.0, 0.45, N.noise( x / 13 + 3.1, z / 13 - 7.7 ) );
+				oats = smoothstep( 0.0, 0.25, e ) * ( 1 - smoothstep( 1.4, 2.2, e ) ) * smoothstep( 0.0, 0.45, N.noise( x / 13 + 3.1, z / 13 - 7.7 ) ) * 0.5;
 				// creepers (beach morning glory): runners mat the ground at the edge and reach further
 				// seaward than the grass
 				vine = smoothstep( - 0.6, - 0.15, e ) * ( 1 - smoothstep( 1.2, 2.0, e ) ) * smoothstep( - 0.15, 0.3, N2.noise( x / 9 - 2.3, z / 9 + 5.3 ) );

@@ -1,5 +1,5 @@
 {
-  "name": "tidewater",
+  "name": "comuisland",
   "version": "1.0.0",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5189",
@@ -13,5 +13,8 @@
   },
   "license": "MIT",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "stats.js": "^0.17.0"
+  }
 }

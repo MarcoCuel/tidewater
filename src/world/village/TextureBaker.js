@@ -203,41 +203,40 @@ fn vlgGen( X: f32, Y: f32 ) -> VlgOut {
 	let fB = vlgN01( vlgPn( X, Y, 5.0, 140.0, 55.0 ) );
 	let fC = vlgN01( vlgPn( X, Y, 16.0, 400.0, 57.0 ) );
 	let streak = fA * 0.5 + fB * 0.3 + fC * 0.2;
-	let erosion = ( 1.0 - late ) * ( fB * 0.6 + 0.4 );
+	let erosion = ( 1.0 - late ) * ( fB * 0.35 + 0.2 );
 
 	// checks / cracks along the grain, tapering at the ends
 	let crN = abs( vlgPn( X, Y, 6.0, 60.0, 71.0 ) );
 	let crMask = smoothstep( 0.1, 0.45, vlgPf( X, Y, 3.0, 4.0, 2, 73.0, 0.5 ) );
-	let crack = ( 1.0 - smoothstep( 0.012, 0.055, crN / ( crMask + 0.05 ) ) ) * step( 0.05, crMask );
+	let crack = 0.0; // ( 1.0 - smoothstep( 0.02, 0.08, crN / ( crMask + 0.05 ) ) ) * step( 0.15, crMask );
 
 	let kCore = ( 1.0 - smoothstep( kRad * 0.72, kRad, kdm ) ) * kHas;
 	let kRing = vlgBand( kdm, kRad * 0.92, kRad * 1.02, kRad * 1.05, kRad * 1.3 ) * kHas;
 
 	let height = 0.46 + late * 0.22 * ringDark - erosion * 0.09 + ( streak - 0.5 ) * 0.14
-		- crack * 0.36 + kCore * 0.08 - kRing * 0.22;
+		- crack * 0.18 + kCore * 0.08 - kRing * 0.22;
 
 	// silver grey surface, brown-grey eroded grooves, fibre streaks, stains and bleaching
 	let blotch = vlgN01( vlgPf( X, Y, 2.0, 3.0, 3, 81.0, 0.5 ) );
 	let bleach = smoothstep( 0.5, 0.82, vlgN01( vlgPf( X, Y, 3.0, 2.0, 3, 83.0, 0.5 ) ) );
 	let stain = smoothstep( 0.58, 0.86, vlgN01( vlgPf( X, Y, 4.0, 5.0, 3, 85.0, 0.5 ) ) );
 	// sun-bleached driftwood grey (linear albedo ~0.2 in the grooves, ~0.45 on the latewood)
-	let grooveC = vec3f( 0.2, 0.186, 0.168 );
-	let silverC = vec3f( 0.45, 0.445, 0.428 );
+	let grooveC = vec3f( 0.28, 0.24, 0.19 );
+	let silverC = vec3f( 0.52, 0.46, 0.38 );
 	var col = mix( grooveC, silverC, clamp( late * ringDark * 0.55 + streak * 0.75 - 0.12, 0.0, 1.0 ) );
 	col = col * ( fA * 0.34 + 0.83 );
 	col = col * ( 1.0 - smoothstep( 0.7, 0.95, fC ) * 0.3 );
 	col = col * ( blotch * 0.24 + 0.88 );
-	col = mix( col, vec3f( 0.55, 0.54, 0.51 ), bleach * 0.3 );
-	col = mix( col, col * vec3f( 0.8, 0.68, 0.54 ), stain * 0.6 );
-	col = mix( col, vec3f( 0.035, 0.03, 0.026 ), crack * 0.92 );
+	col = mix( col, vec3f( 0.58, 0.52, 0.43 ), bleach * 0.15 );
+	col = mix( col, col * vec3f( 0.85, 0.74, 0.6 ), stain * 0.3 );
+	col = mix( col, vec3f( 0.12, 0.09, 0.06 ), crack * 0.6 );
 	col = mix( col, mix( vec3f( 0.13, 0.085, 0.05 ), vec3f( 0.07, 0.045, 0.03 ), fract( kdm * 900.0 ) ), kCore );
 	col = mix( col, vec3f( 0.05, 0.04, 0.03 ), kRing * 0.8 );
 
 	// paint chip field (A): paint lets go in grain-aligned flakes, first at cracks, knots and eroded grain
 	let flake = vlgPw( X, Y, 30.0, 80.0, 91.0, 0.9 );
 	let chipLarge = vlgN01( vlgPf( X, Y, 4.0, 8.0, 4, 97.0, 0.5 ) );
-	let chip = chipLarge * 0.62 + flake.z * 0.3 + late * 0.06 - erosion * 0.04
-		- crack * 0.4 - kCore * 0.1;
+	let chip = chipLarge * 0.62 + flake.z * 0.3 + late * 0.06 - erosion * 0.04;
 
 	let rough = clamp( 0.82 + erosion * 0.1 + fA * 0.04 + crack * 0.08 - kCore * 0.15, 0.0, 1.0 );
 	let occ = 1.0 - crack * 0.65 - kRing * 0.4 - erosion * 0.08;

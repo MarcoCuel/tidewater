@@ -70,14 +70,14 @@ fn vlmTidal( pw: vec3f, col: vec3f, rough: f32 ) -> VlmTidal {
 	let q = vec2f( pw.x + pw.z * 0.7, pw.y );
 	let Gt = textureSample( vlgGrime, smpAnisoRepeat, q * vec2f( 0.6, 1.2 ) );
 	let y = pw.y + ( Gt.a - 0.5 ) * 0.3;
-	let wet = 1.0 - smoothstep( 0.3, 0.75, y );
-	let damp = ( 1.0 - smoothstep( 0.7, 1.5, y ) ) * 0.4;
+	let wet = 1.0 - smoothstep( 0.15, 0.45, y );
+	let damp = ( 1.0 - smoothstep( 0.45, 0.9, y ) ) * 0.2;
 	let algae = mix( vec3f( 0.028, 0.042, 0.02 ), vec3f( 0.11, 0.105, 0.05 ), Gt.a * 0.6 + Gt.r * 0.4 );
 	let Gb = textureSample( vlgGrime, smpAnisoRepeat, q * 3.1 );
-	let barn = Gb.b * smoothstep( - 1.6, - 0.35, y ) * ( 1.0 - smoothstep( 0.25, 0.6, y ) );
+	let barn = Gb.b * smoothstep( - 1.6, - 0.35, y ) * ( 1.0 - smoothstep( 0.15, 0.35, y ) );
 	var c = col * ( 1.0 - damp );
-	c = mix( c, algae, wet );
-	c = mix( c, vec3f( 0.52, 0.5, 0.44 ), barn * 0.9 );
+	c = mix( c, algae, wet * 0.6 );
+	c = mix( c, vec3f( 0.52, 0.5, 0.44 ), barn * 0.5 );
 	var r = mix( rough, 0.3, wet * 0.9 );
 	r = mix( r, 0.55, damp );
 	r = mix( r, 0.9, barn );
@@ -205,11 +205,11 @@ export function createWoodMaterial( T ) {
 	let edgeSlope = vec2f( cX, cY ) * edge * - 9.0;
 	let P = textureSample( vlgPaintN, smpAnisoRepeat, g * vec2f( 1.0, 2.0 ) + off * 3.7 );
 
-	let fade = clamp( Gm.a * 0.55 + wW * 0.25 + macroV * 0.2, 0.0, 1.0 );
+	let fade = clamp( Gm.a * 0.25 + wW * 0.12 + macroV * 0.10, 0.0, 1.0 );
 	let chalk = aTint * 0.64 + vec3f( 0.27, 0.265, 0.25 );
 	// bright paints (white trim, cream siding) never stay white out here: dusty, yellowed, grey
-	let aged = mix( aTint, aTint * vec3f( 0.86, 0.84, 0.77 ), smoothstep( 0.45, 0.8, luminance( aTint ) ) * ( 0.6 + Gm.a * 0.4 ) );
-	let paintCol = mix( aged, chalk, fade * 0.5 ) * ( ( P.b - 0.5 ) * 0.16 + 1.0 );
+	let aged = mix( aTint, aTint * vec3f( 0.92, 0.90, 0.86 ), smoothstep( 0.55, 0.9, luminance( aTint ) ) * ( 0.3 + Gm.a * 0.2 ) );
+	let paintCol = mix( aged, chalk, fade * 0.25 ) * ( ( P.b - 0.5 ) * 0.10 + 1.0 );
 
 	// siding / plank patterns (shading and slope in mesh space)
 	let fvLap = fract( uvS.y / 0.2 );
@@ -256,16 +256,16 @@ export function createWoodMaterial( T ) {
 	// ---- colour
 	var col = mix( wood * ( stain * - 0.4 + 1.0 ), paintCol, painted );
 	col = mix( col, vec3f( 0.04, 0.032, 0.028 ), nail );
-	let dirt = mix( 0.22, 0.5, wW );
+	let dirt = 0.0; // mix( 0.22, 0.5, wW );
 	let Gd = mix( Gm, Gs, rawK );
 	col = col * ( 1.0 - Gd.r * dirt * mix( 0.75, 0.35, rawK ) );
-	col = mix( col, vec3f( 0.62, 0.61, 0.57 ), Gd.g * mix( 0.28, 0.16, rawK ) * ( painted * 0.5 + 0.5 ) );
-	col = col * ( 1.0 - Gm.b * 0.3 * hasPaint );
+	col = mix( col, vec3f( 0.62, 0.61, 0.57 ), Gd.g * mix( 0.10, 0.06, rawK ) * ( painted * 0.5 + 0.5 ) );
+	col = col * ( 1.0 - Gm.b * 0.10 * hasPaint );
 	let isWall = mLap + mBB + mTG;
 	// splash-back along the bottom of walls: rain throws sand and soil up the boards, and green
 	// mildew grows where they stay damp; a ragged upper edge
 	let splashH = 0.55 + ( Gm.a - 0.5 ) * 0.5 + ( macroV - 0.5 ) * 0.3;
-	let splash = ( 1.0 - smoothstep( 0.0, splashH, uvS.y ) ) * isWall;
+	let splash = 0.0; // ( 0.0, splashH, uvS.y ) ) * isWall;
 	col = col * ( 1.0 - splash * 0.5 );
 	col = mix( col, col * vec3f( 0.78, 0.9, 0.62 ), splash * smoothstep( 0.4, 0.7, Gm.a + Gm.b * 0.5 ) * 0.7 );
 	let ao = mix( N.a, mix( 1.0, N.a, 0.35 ) * P.a, painted );
@@ -282,10 +282,10 @@ export function createWoodMaterial( T ) {
 	let walkK = step( paint, - 0.5 ) * smoothstep( 0.6, 0.9, upF ) * exp( - wd * wd ) * ( 1.0 - endAny );
 	// the path is worn brown-grey: the silver skin scuffed off, grime trodden into the grain
 	let trodden = col * vec3f( 0.8, 0.76, 0.72 );
-	col = mix( col, trodden, walkK * 0.55 );
+	col = mix( col, trodden, 0.0 );
 	// grit and dirt packed along the edges of deck boards (the gaps collect it)
 	let bev = min( uvS.y, 0.18 - uvS.y );
-	let edgeDirt = mNail * smoothstep( 0.6, 0.9, upF ) * ( 1.0 - smoothstep( 0.004, 0.03, bev ) ) * ( 1.0 - endAny );
+	let edgeDirt = 0.0; // ( 0.6, 0.9, upF ) * ( 1.0 - smoothstep( 0.004, 0.03, bev ) ) * ( 1.0 - endAny );
 	col = col * ( 1.0 - edgeDirt * ( 0.18 + Gs.r * 0.15 ) );
 	// water that pools along the board edges keeps them damp and darker in broad, gradual bands
 	// (no blotches: it follows the boards); sun and salt bleach the open middle of the deck
@@ -294,19 +294,13 @@ export function createWoodMaterial( T ) {
 	// rain and rust streaks running down vertical faces (from nails, bolts, sills and roof edges)
 	let sqA = textureSample( vlgGrime, smpAnisoRepeat, vec2f( ( in.P.x + in.P.z ) * 2.3 + seed * 5.0, in.P.y * 0.12 ) );
 	let sqB = textureSample( vlgGrime, smpAnisoRepeat, vec2f( ( in.P.x - in.P.z ) * 5.1, in.P.y * 0.3 + 0.37 ) );
-	let streak = sideF * sideF * clamp( smoothstep( 0.45, 0.85, sqB.r ) + smoothstep( 0.6, 0.7, sqA.a ) * 0.35, 0.0, 1.0 ) * ( 0.45 + wW * 0.55 ) * ( 1.0 - endAny );
+	let streak = sideF * sideF * clamp( smoothstep( 0.55, 0.9, sqB.r ) + smoothstep( 0.7, 0.8, sqA.a ) * 0.2, 0.0, 1.0 ) * ( 0.15 + wW * 0.25 ) * ( 1.0 - endAny );
 	let rustS = streak * smoothstep( 0.5, 0.6, sqA.a );
-	col = col * ( 1.0 - streak * 0.24 );
-	col = mix( col, col * vec3f( 1.04, 0.78, 0.6 ), rustS * 0.6 );
-	// bird droppings: sparse splats on upward faces above head height (rails, posts, cap beams, sills)
-	let bq = in.P.xz / 0.3;
-	let bc = floor( bq );
-	let bh = vlmHash21( bc.x + seed, bc.y );
-	let bo = fract( bq ) - 0.5 - ( vec2f( vlmHash21( bc.x + 3.1, bc.y ), vlmHash21( bc.x, bc.y + 7.7 ) ) - 0.5 ) * 0.45;
-	let bd = length( bo * vec2f( 1.0, 1.35 ) ) + ( Gm.a - 0.5 ) * 0.08;
-	let dropK = step( 0.93, bh ) * smoothstep( 0.75, 0.95, upF ) * step( 2.6, in.P.y ) * ( 1.0 - smoothstep( 0.1, 0.15, bd ) );
-	let dropCore = dropK * ( 1.0 - smoothstep( 0.02, 0.07, bd ) );
-	col = mix( col, mix( vec3f( 0.62, 0.61, 0.56 ), vec3f( 0.8, 0.79, 0.74 ), dropCore ), dropK * 0.6 );
+	col = col * ( 1.0 - streak * 0.10 );
+	col = mix( col, col * vec3f( 1.04, 0.78, 0.6 ), rustS * 0.25 );
+	// bird droppings: REMOVE entirely
+	let dropK = 0.0;
+	let dropCore = 0.0;
 
 	// ---- normal (grain space -> mesh space) + analytic pattern relief
 	let sWood = vlmSlopeOf( N ) + vlmSlopeOf( D ) * near * 0.5;
@@ -367,7 +361,7 @@ export function createRoofMetalMaterial( T ) {
 	let rustIn = clamp( rustAmt + 0.15 + replaced * 0.2 + ( macroV.r - 0.4 ) * 0.5, 0.0, 1.0 );
 	// rust channel quantiles: 50% 0.25, 70% 0.31, 90% 0.42 -> rust 0.4 ~10%, 0.6 ~25%, 0.8 ~45%
 	let thr = mix( 0.62, 0.23, rustIn ) - eave * 0.2;
-	let rust = smoothstep( thr - 0.04, thr + 0.04, M.r );
+	let rust = 0.0; // smoothstep( thr - 0.04, thr + 0.04, M.r );
 	let fade = clamp( M.b * 0.7 + macroV.b * 0.3, 0.0, 1.0 );
 
 	let paintCol = mix( aTint, aTint * 0.7 + vec3f( 0.12, 0.1, 0.085 ), fade * 0.55 ) * ( sheetR * 0.16 + 0.9 );
@@ -493,16 +487,19 @@ fn vlmGlass( uvm: vec2f, aTint: vec3f, seed: f32, kind: f32, lit: f32 ) -> VlmGl
 	// grime map channels: R streaks, G salt, B spots, A macro
 	let Gl = textureSample( vlgGrime, smpAnisoRepeat, uvm * 0.45 + vec2f( seed * 3.7, seed * 1.3 ) );
 	let edgeD = min( min( uvm.x, 1.0 - uvm.x ), min( uvm.y, 1.0 - uvm.y ) );
-	let frameDirt = 1.0 - smoothstep( 0.0, 0.07, edgeD );
-	let curtain = ( 1.0 - smoothstep( 0.18, 0.3, uvm.x ) + smoothstep( 0.7, 0.82, uvm.x ) ) * step( 0.35, seed );
+	let frameDirt = 0.0; // ( 0.0, 0.07, edgeD );
+	let isLantern = step( 0.5, kind ) * step( kind, 1.5 );
+	let isModern = step( 1.5, kind );
+	let curtain = ( 1.0 - smoothstep( 0.18, 0.3, uvm.x ) + smoothstep( 0.7, 0.82, uvm.x ) ) * step( 0.35, seed ) * ( 1.0 - isModern );
 	let folds = vlmN01( sin( uvm.x * 70.0 + seed * 20.0 ) );
-	let interior = vec3f( 0.012, 0.014, 0.017 ) * ( Gl.a * 0.8 + 0.6 );
-	var winCol = mix( interior, aTint * 0.16 * ( folds * 0.4 + 0.6 ), curtain );
+	let modernGlassColor = vec3f( 0.18, 0.22, 0.23 ) * ( Gl.a * 0.3 + 0.7 );
+	let interior = mix( vec3f( 0.012, 0.014, 0.017 ) * ( Gl.a * 0.8 + 0.6 ), modernGlassColor, isModern );
+	let curtainBright = mix( 0.16, 0.65, isModern ); // Brighter unlit curtain for modern houses
+	var winCol = mix( interior, aTint * curtainBright * ( folds * 0.4 + 0.6 ), curtain );
 	winCol = winCol + vec3f( 0.05, 0.05, 0.045 ) * Gl.g + vec3f( 0.03, 0.026, 0.02 ) * ( Gl.b + frameDirt );
 	let lanternCol = aTint * 0.55 * ( 1.0 - Gl.b * 0.25 );
-	let isLantern = step( 0.5, kind );
 	let color = mix( winCol, lanternCol, isLantern );
-	let rough = mix( 0.035 + Gl.r * 0.22 + Gl.g * 0.18 + Gl.b * 0.1 + frameDirt * 0.25, 0.32 + Gl.r * 0.15, isLantern );
+	let rough = mix( mix( 0.035 + Gl.r * 0.22 + Gl.g * 0.18 + Gl.b * 0.1 + frameDirt * 0.25, 0.02, isModern ), 0.32 + Gl.r * 0.15, isLantern );
 
 	let nightOn = smoothstep( 0.15, 0.75, frame.night );
 	let warm = vec3f( 1.0, 0.56, 0.24 );
@@ -559,7 +556,7 @@ export function createStoneMaterial( T ) {
 	var col = mix( stoneCol * mix( 1.0, N.a, 0.5 ), plasterCol, pm );
 	// sand dust and splash dirt near the ground
 	let low = 1.0 - smoothstep( 0.05, 0.75, uvS.y );
-	let dust = low * smoothstep( 0.25, 0.7, PA.a ) * 0.8;
+	let dust = 0.0; // ( 0.25, 0.7, PA.a ) * 0.8;
 	col = mix( col, vec3f( 0.46, 0.4, 0.3 ), dust );
 	col = col * ( 1.0 - low * 0.18 );
 
@@ -699,6 +696,16 @@ export function createVillageMaterials( textures = new VillageTextures() ) {
 		stone: createStoneMaterial( T ),
 		fabric: createFabricMaterial( T ),
 		net: createNetMaterial( T ),
+		modernGlass: createModernGlassMaterial( T ),
 	};
 
+}
+
+export function createModernGlassMaterial( T ) {
+	const m = villageMaterial( { roughness: 0.1, metalness: 0.3, transparent: true, side: DoubleSide, depthWrite: false }, T, [], { surface: /* wgsl */`
+	s.albedo = vec3f( 0.9, 0.95, 1.0 );
+	s.alpha = 0.15;
+` } );
+	m.name = 'VillageModernGlass';
+	return m;
 }

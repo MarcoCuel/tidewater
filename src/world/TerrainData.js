@@ -238,9 +238,31 @@ export class TerrainData {
 					const rr = R * ( 1 + 0.2 * n.noise( ca * 1.3 + px, sa * 1.3 + pz ) + 0.08 * n2.noise( x / 17, z / 17 ) - flute );
 					const u = Math.sqrt( r2 ) / rr;
 					// sheer walls, a talus apron at the foot and a craggy crown
-					const wall = smoothstep( 1.0, 0.72, u );
+					const isSummit = ( px === - 42 && pz === - 505 );
+					let wallU = 1.0;
+					if ( isSummit ) {
+
+						const da = Math.abs( a - 1.28 );
+						const ramp = Math.max( 0, 1 - da / 0.45 ) * 0.35;
+						wallU += ramp;
+
+					}
+
+					const wall = smoothstep( wallU, 0.72, u );
 					const apron = ( 1 - smoothstep( 0.9, 1.3, u ) ) * 0.12;
-					const crown = 1 - 0.35 * u * u + n2.ridged( x / 19, z / 19, 3 ) * 0.35 - 0.15;
+					let crown;
+					if ( isSummit ) {
+
+						const noiseK = smoothstep( 0.22, 0.52, u );
+						const crag = ( n2.ridged( x / 19, z / 19, 3 ) * 0.35 - 0.15 ) * noiseK;
+						crown = 1.0 - 0.35 * Math.pow( smoothstep( 0.22, 0.72, u ), 2 ) + crag;
+
+					} else {
+
+						crown = 1 - 0.35 * u * u + n2.ridged( x / 19, z / 19, 3 ) * 0.35 - 0.15;
+
+					}
+
 					m += H * ( wall * crown + apron );
 
 				}
@@ -602,6 +624,9 @@ export class TerrainData {
 
 		}
 
+		// ---- summit plateau: flat building pad on the central volcanic massif
+		this.flatten( - 38, - 500, 20, 296.5, 8 );
+
 		// ---- footpaths: worn, slightly sunken
 		for ( const p of PATHS ) {
 
@@ -822,11 +847,9 @@ export class TerrainData {
 					const e = - d;
 					// the beach proper runs just past the berm crest; behind it sandy soil grades
 					// into the village lawn, while the dunes away from the village stay sandy
-					const beach = bz * ( 1 - smoothstep( 36 + nz * 10, 50 + nz * 14, e ) );
-					const backBeach = bz * 0.45 * ( 1 - smoothstep( 60 + nz * 20, 100 + nz * 20, e ) );
-					const vd = Math.hypot( ( x - VILLAGE.x ) * 0.8, z - VILLAGE.z );
-					const away = smoothstep( 80, 120, vd ) * smoothstep( 14, 30, Math.abs( x - WORLD.pier.x ) );
-					const dune = bz * away * ( 1 - smoothstep( 4.5 + nz * 2, 7 + nz * 2, h ) ) * ( 1 - smoothstep( 110, 140, e ) );
+					const beach = bz * ( 1 - smoothstep( 100 + nz * 10, 125 + nz * 14, e ) );
+					const backBeach = bz * 0.45 * ( 1 - smoothstep( 125 + nz * 20, 155 + nz * 20, e ) );
+					const dune = bz * ( 1 - smoothstep( 5.5 + nz * 2, 8 + nz * 2, h ) ) * ( 1 - smoothstep( 115, 140, e ) );
 					const cove = ( 1 - smoothstep( 6, 16, e ) ) * ( 1 - smoothstep( 0.25, 0.5, rk ) ) * ( 1 - smoothstep( 1.8, 3.2, h ) ) * ( 1 - smoothstep( 0.12, 0.3, slope ) );
 					sd = Math.max( beach, backBeach, dune, cove ) * ( 1 - smoothstep( 0.3, 0.6, slope ) );
 

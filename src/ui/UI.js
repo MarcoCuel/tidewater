@@ -1,4 +1,6 @@
 import { icon, brandMark } from './icons.js';
+import Stats from 'stats.js';
+import { t, onLocaleChange } from '../i18n/index.js';
 
 // Tidewater UI: settings panel (tabs → folders → controls), HUD, help,
 // photo mode, start overlay and loader. Plain DOM, no dependencies.
@@ -123,13 +125,13 @@ function skyAt( hour ) {
 
 }
 
-const PHASES = [ [ 4.8, 'Night' ], [ 5.6, 'Dawn' ], [ 6.4, 'Sunrise' ], [ 7.2, 'Golden hour' ], [ 10.5, 'Morning' ],
-	[ 13.5, 'Midday' ], [ 16.8, 'Afternoon' ], [ 17.6, 'Golden hour' ], [ 18.4, 'Sunset' ], [ 19.3, 'Dusk' ], [ 24, 'Night' ] ];
+const PHASES = [ [ 4.8, 'night' ], [ 5.6, 'dawn' ], [ 6.4, 'sunrise' ], [ 7.2, 'goldenHour' ], [ 10.5, 'morning' ],
+	[ 13.5, 'midday' ], [ 16.8, 'afternoon' ], [ 17.6, 'goldenHour' ], [ 18.4, 'sunset' ], [ 19.3, 'dusk' ], [ 24, 'night' ] ];
 
 const phaseAt = ( hh ) => {
 
-	for ( const [ end, name ] of PHASES ) if ( hh < end ) return name;
-	return 'Night';
+	for ( const [ end, name ] of PHASES ) if ( hh < end ) return t( 'phases.' + name );
+	return t( 'phases.night' );
 
 };
 
@@ -1923,28 +1925,13 @@ export class UI {
 
 		// top-left: frame rate, then brand + traversal mode
 		const tl = h( 'div', 'tw-tl' );
-		const stats = this.statsEl = h( 'div', 'tw-stats tw-glass', { 'data-level': 'good', 'aria-hidden': 'true' } );
-		stats.innerHTML = `
-			<div class="tw-stats-main"><span class="tw-fps">--</span><span class="tw-fps-unit">fps</span></div>
-			<canvas class="tw-spark"></canvas>
-			<div class="tw-stats-sub">
-				<span class="tw-kv"><span class="tw-k">frame</span><span class="tw-v tw-ms">--</span></span>
-				<span class="tw-kv tw-kv-gpu" hidden><span class="tw-k">gpu</span><span class="tw-v tw-gpu">--</span></span>
-			</div>`;
-		this.fpsEl = stats.querySelector( '.tw-fps' );
-		this.msEl = stats.querySelector( '.tw-ms' );
-		this.gpuEl = stats.querySelector( '.tw-gpu' );
-		this.gpuKv = stats.querySelector( '.tw-kv-gpu' );
-		this.sparkEl = stats.querySelector( '.tw-spark' );
+		
+		this.stats = new Stats();
+		this.stats.showPanel( 0 );
+		this.stats.dom.style.position = 'static';
+		this.stats.dom.style.marginBottom = '12px';
 
-		const brand = h( 'div', 'tw-brand' );
-		brand.innerHTML = `${ brandMark() }<span class="tw-brand-name">TIDEWATER</span>`;
-		this.modeEl = h( 'div', 'tw-mode is-empty', { role: 'status' } );
-		this.modeIco = h( 'span', 'tw-mode-ico' );
-		this.modeText = h( 'span', 'tw-mode-text' );
-		this.modeEl.append( this.modeIco, this.modeText );
-		brand.append( this.modeEl );
-		tl.append( stats, brand );
+		tl.append( this.stats.dom );
 
 		// top-centre: notifications
 		this.toastsEl = h( 'div', 'tw-toasts', { 'aria-live': 'polite' } );
@@ -2187,8 +2174,6 @@ export class UI {
 		const el = this.startEl = h( 'div', 'tw-start tw-interactive', { hidden: true } );
 		el.innerHTML = `
 			<div class="tw-start-inner">
-				${ brandMark( 'tw-start-mark' ) }
-				<div class="tw-start-title">TIDEWATER</div>
 				<button type="button" class="tw-start-cta"><span class="tw-start-pulse" aria-hidden="true"></span>${ icon( 'mouse' ) }<span>Click to explore</span></button>
 				<div class="tw-start-keys">
 					<span><span class="tw-wasd"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span>Move</span>
@@ -2695,25 +2680,7 @@ export class UI {
 	// ── HUD ─────────────────────────────────────────────────────────────────
 
 	setMode( label ) {
-
-		label = label == null ? '' : String( label );
-		if ( label === this._mode ) return;
-		this._mode = label;
-		this.modeEl.classList.toggle( 'is-empty', ! label );
-		this.modeText.textContent = label;
-		const ic = modeIcon( label );
-		if ( ic !== this._modeIc ) {
-
-			this._modeIc = ic;
-			this.modeIco.innerHTML = icon( ic );
-
-		}
-
-		this.modeEl.classList.remove( 'is-bump' );
-		void this.modeEl.offsetWidth;
-		this.modeEl.classList.add( 'is-bump' );
-		this._activity();
-
+		// Removed mode indicator
 	}
 
 	// setPrompt( 'E', 'Board boat' ) shows it; setPrompt( null ) hides it.
@@ -2913,109 +2880,6 @@ export class UI {
 
 	}
 
-	setStats( s = {} ) {
-
-		const num = ( v ) => ( typeof v === 'number' && isFinite( v ) ? v : NaN );
-		let fps = num( s.fps ), frameMs = num( s.frameMs );
-		const gpuMs = num( s.gpuMs );
-		if ( ! ( fps > 0 ) && frameMs > 0 ) fps = 1000 / frameMs;
-		if ( ! ( frameMs > 0 ) && fps > 0 ) frameMs = 1000 / fps;
-
-		// sparkline: worst frame per 100 ms bucket, so hitches stay visible
-		const now = performance.now();
-		if ( frameMs > 0 ) this._sparkAcc = Math.max( this._sparkAcc, frameMs );
-		if ( now - this._sparkT >= 100 && this._sparkAcc > 0 ) {
-
-			this._sparkT = now;
-			this._spark.push( this._sparkAcc );
-			if ( this._spark.length > 60 ) this._spark.shift();
-			this._sparkAcc = 0;
-			this._drawSpark();
-
-		}
-
-		if ( now - this._statsT < 250 ) return;
-		this._statsT = now;
-		if ( fps > 0 ) {
-
-			const f = String( Math.round( fps ) );
-			if ( f !== this._fpsTxt ) {
-
-				this._fpsTxt = f;
-				this.fpsEl.textContent = f;
-
-			}
-
-			const lvl = fps >= 50 ? 'good' : fps >= 30 ? 'warn' : 'bad';
-			if ( lvl !== this._lvl ) {
-
-				this._lvl = lvl;
-				this.statsEl.dataset.level = lvl;
-
-			}
-
-		}
-
-		if ( frameMs > 0 ) this.msEl.textContent = `${ frameMs.toFixed( 1 ) } ms`;
-		const hasGpu = gpuMs >= 0;
-		if ( this.gpuKv.hidden === hasGpu ) this.gpuKv.hidden = ! hasGpu;
-		if ( hasGpu ) this.gpuEl.textContent = `${ gpuMs.toFixed( 1 ) } ms`;
-
-	}
-
-	_drawSpark() {
-
-		const ctx = this._ctx2d( this.sparkEl );
-		if ( ! ctx ) return;
-		const { g, w, h: hh } = ctx;
-		const data = this._spark;
-		const top = Math.max( 34, ...data ) * 1.1;
-		const Y = ( ms ) => hh - 1.5 - ( Math.min( ms, top ) / top ) * ( hh - 4 );
-		const X = ( i ) => w - 2 - ( data.length - 1 - i ) * ( ( w - 4 ) / 59 );
-
-		// 60 fps reference
-		g.strokeStyle = 'rgba(200, 230, 240, 0.18)';
-		g.lineWidth = 1;
-		g.setLineDash( [ 2, 3 ] );
-		g.beginPath();
-		const yr = Math.round( Y( 1000 / 60 ) ) + 0.5;
-		g.moveTo( 0, yr );
-		g.lineTo( w, yr );
-		g.stroke();
-		g.setLineDash( [] );
-		if ( data.length < 2 ) return;
-
-		const rgb = this._lvl === 'bad' ? '255, 122, 133' : this._lvl === 'warn' ? '255, 184, 107' : '95, 227, 212';
-		const trace = () => {
-
-			g.beginPath();
-			data.forEach( ( v, i ) => ( i ? g.lineTo( X( i ), Y( v ) ) : g.moveTo( X( i ), Y( v ) ) ) );
-
-		};
-
-		const grad = g.createLinearGradient( 0, 0, 0, hh );
-		grad.addColorStop( 0, `rgba(${ rgb }, 0.32)` );
-		grad.addColorStop( 1, `rgba(${ rgb }, 0)` );
-		trace();
-		g.lineTo( X( data.length - 1 ), hh );
-		g.lineTo( X( 0 ), hh );
-		g.closePath();
-		g.fillStyle = grad;
-		g.fill();
-
-		trace();
-		g.strokeStyle = `rgba(${ rgb }, 0.95)`;
-		g.lineWidth = 1.25;
-		g.lineJoin = 'round';
-		g.stroke();
-
-		const last = data.length - 1;
-		g.fillStyle = `rgb(${ rgb })`;
-		g.beginPath();
-		g.arc( X( last ), Y( data[ last ] ), 1.8, 0, TAU );
-		g.fill();
-
-	}
 
 	// Brief notification. Returns a function that dismisses it early.
 	toast( text, ms = 2500 ) {
@@ -3542,7 +3406,7 @@ export class UI {
 			live.fps = 60 - Math.abs( Math.sin( t * 0.7 ) ) * 4 - ( Math.random() < 0.015 ? 22 : 0 );
 			live.frameMs = 1000 / live.fps;
 			live.gpuMs = live.frameMs * ( 0.55 + Math.sin( t * 0.3 ) * 0.05 );
-			ui.setStats( live );
+			ui.stats.update();
 
 			const boat = MODES[ mode ][ 0 ].startsWith( 'Boat' );
 			const thr = clamp( Math.sin( t * 0.35 ) * 0.65 + 0.35, - 1, 1 );

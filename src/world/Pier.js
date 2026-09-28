@@ -44,7 +44,7 @@ export function buildPier( { B, terrain, colliders, rand, lights, inst, signB = 
 	const capTop = stringerTop - PIER.stringerH;
 	const capBot = capTop - PIER.capH;
 	const ground = ( x, z ) => terrain.heightAt( x, z );
-	const pierWood = ( w0 = 0.6, w1 = 0.95 ) => WOOD( rand.next(), rand.range( w0, w1 ), 0, 0 );
+	const pierWood = ( w0 = 0.15, w1 = 0.4 ) => WOOD( rand.next(), rand.range( w0, w1 ), 0, 0 );
 	// timber tone per piece: most boards close to the average, some dark (water-stained, oily) or
 	// pale (sun-bleached, recently planed) - an old pier is a patchwork of repairs
 	const tone = () => {
@@ -68,47 +68,20 @@ export function buildPier( { B, terrain, colliders, rand, lights, inst, signB = 
 
 		const g = ground( px, pz );
 		const bottom = g - 1.5;
-		const r = opts.r ?? PIER.pileR * rand.range( 0.84, 1.16 );
+		const r = opts.r ?? PIER.pileR;
 		const post = top > DK;
 		const h = top - bottom;
 		// driven piles wander: posts that carry a rail lean less
-		const tilt = post ? 0.008 : 0.028;
+		
 		const data = WOOD( rand.next(), rand.range( 0.8, 1.0 ), 0, 0 );
-		const rx = rand.range( - tilt, tilt ), rz = rand.range( - tilt, tilt );
-		B.cyl( 'wood', px, bottom, pz, r * rand.range( 0.86, 0.95 ), r * 1.06, h, {
+		const rx = 0, rz = 0;
+		B.cyl( 'wood', px, bottom, pz, r * 0.9, r * 1.0, h, {
 			segs: 10, capTop: ! post || !! opts.flatTop, rx, rz, tint: tone(), data,
 		} );
 		const wl = 0.0; // mean sea level
-		// sistered repair: a shorter, thinner pile bolted alongside a rotten one
-		if ( ! post && rand.chance( 0.18 ) && top - g > 2.5 ) {
-
-			const a = rand.range( 0, Math.PI * 2 ), d = r + 0.08;
-			const sx = px + Math.cos( a ) * d, sz = pz + Math.sin( a ) * d;
-			const sb = Math.max( g - 0.5, bottom ), st = top - rand.range( 0.05, 0.4 );
-			B.cyl( 'wood', sx, sb, sz, 0.075, 0.085, st - sb, { segs: 7, rx: rand.range( - 0.01, 0.01 ), rz: rand.range( - 0.01, 0.01 ), tint: freshTone(), data: WOOD( rand.next(), rand.range( 0.2, 0.45 ), 0, 0 ) } );
-			for ( const by of [ wl + 0.6, st - 0.3 ] ) {
-
-				if ( by < sb + 0.2 ) continue;
-				B.cyl( 'hard', ( px + sx ) / 2, by, ( pz + sz ) / 2, 0.012, 0.012, d + 0.1, { segs: 5, rx: Math.PI / 2, ry: - a + Math.PI / 2, tint: C.iron, data: HARD( rand.next(), 0.95, 0.4, 0.7 ) } );
-
-			}
-
-		}
-
-		// old mooring rope wrapped round a pile above the water, or a tyre slipped over it
-		if ( ! post && rand.chance( 0.1 ) ) {
-
-			const y = wl + rand.range( 0.7, 1.4 );
-			for ( let k = 0; k < 3; k ++ ) B.torus( 'rope', px, y + k * 0.035, pz, r + 0.02, 0.018, { rx: rand.range( - 0.08, 0.08 ), radial: 5, tubular: 14, tint: rand.chance( 0.5 ) ? C.rope : C.ropeDark, data: [ rand.next(), 0.8, 0, 0 ] } );
-
-		} else if ( ! post && rand.chance( 0.05 ) ) {
-
-			B.torus( 'hard', px, wl + rand.range( 0.3, 0.9 ), pz, r + 0.2, 0.1, { rx: rand.range( - 0.25, 0.25 ), rz: rand.range( - 0.2, 0.2 ), radial: 6, tubular: 14, tint: C.rubber, data: HARD( rand.next(), 0, 0, 0.85 ) } );
-
-		}
 		if ( post && ! opts.flatTop ) {
 
-			B.cyl( 'wood', px, top, pz, r * 0.5, r * 0.93, 0.07, { segs: 10, tint: tone(), data } );
+			B.cyl( 'wood', px, top, pz, r * 0.8, r * 0.9, 0.07, { segs: 10, tint: tone(), data } );
 
 		}
 
@@ -146,14 +119,12 @@ export function buildPier( { B, terrain, colliders, rand, lights, inst, signB = 
 		if ( yTop - yBot < 0.9 ) return;
 		const off = PIER.pileR + 0.035;
 		// bays differ: one brace lost to a storm, braces replaced at slightly different heights
-		const r = rand.next();
-		const j = () => rand.range( - 0.18, 0.18 );
+		const r = 0.5;
+		const j = () => 0;
 		const piece = () => rand.chance( 0.2 ) ? { tint: freshTone(), data: WOOD( rand.next(), rand.range( 0.25, 0.5 ), 0, 0 ) } : { tint: tone(), data: pierWood( 0.8, 1 ) };
-		if ( r > 0.12 ) B.beam( 'wood', [ xa, yTop + j(), bz + off ], [ xb, yBot + j(), bz + off ], 0.05, rand.range( 0.17, 0.22 ), piece() );
-		if ( r < 0.84 ) B.beam( 'wood', [ xa, yBot + j(), bz - off ], [ xb, yTop + j(), bz - off ], 0.05, rand.range( 0.17, 0.22 ), piece() );
-		// a horizontal waler here and there
-		if ( rand.chance( 0.25 ) ) B.beam( 'wood', [ xa - 0.1, yBot + 0.3, bz + off + 0.05 ], [ xb + 0.1, yBot + 0.3 + rand.range( - 0.06, 0.06 ), bz + off + 0.05 ], 0.05, 0.18, { tint: tone(), data: pierWood( 0.85, 1 ) } );
-
+		B.beam( 'wood', [ xa, yTop + j(), bz + off ], [ xb, yBot + j(), bz + off ], 0.05, rand.range( 0.17, 0.22 ), piece() );
+		B.beam( 'wood', [ xa, yBot + j(), bz - off ], [ xb, yTop + j(), bz - off ], 0.05, rand.range( 0.17, 0.22 ), piece() );
+		
 	};
 
 	// ------------------------------------------------------------------ walkway bents
@@ -198,10 +169,10 @@ export function buildPier( { B, terrain, colliders, rand, lights, inst, signB = 
 				const xo = X + side * ( PIER.pileOff + PIER.pileR + 0.03 );
 				const g = Math.max( ground( X + side * PIER.pileOff, bz ), ground( X + side * PIER.pileOff, bz2 ) );
 				const yTop = capBot - 0.2, yBot = Math.max( g + 0.4, yTop - 3.2 );
-				if ( yTop - yBot > 0.9 && rand.chance( 0.85 ) ) {
+				if ( yTop - yBot > 0.9 ) {
 
-					const flip = rand.chance( 0.3 );
-					B.beam( 'wood', [ xo, flip ? yBot : yTop, bz + 0.25 + rand.range( 0, 0.2 ) ], [ xo, flip ? yTop : yBot, bz2 - 0.25 - rand.range( 0, 0.2 ) ], 0.05, rand.range( 0.17, 0.22 ), { tint: tone(), data: pierWood( 0.8, 1 ) } );
+					const flip = false;
+					B.beam( 'wood', [ xo, flip ? yBot : yTop, bz + 0.25 ], [ xo, flip ? yTop : yBot, bz2 - 0.25 ], 0.05, rand.range( 0.17, 0.22 ), { tint: tone(), data: pierWood( 0.8, 1 ) } );
 
 				}
 
@@ -231,31 +202,21 @@ export function buildPier( { B, terrain, colliders, rand, lights, inst, signB = 
 	// material as paint = -( 1 + path centre u ), see VillageMaterials).
 	function plank( cx, zc, L, head ) {
 
-		if ( rand.chance( head ? 0.006 : 0.012 ) ) return; // missing board
-		const newer = rand.chance( 0.07 );
+				const newer = rand.chance( 0.07 );
 		const wth = newer ? rand.range( 0.25, 0.45 ) : rand.range( 0.55, 1.0 );
 		const t = newer ? freshTone() : tone();
 		// boards nearly fill the 0.215 m pitch (gaps ~0.5-2.5 cm): wider gaps turned the distant deck
 		// into rows of sub-pixel dark lines that no anti-aliasing kept steady
-		const wdt = rand.range( 0.198, 0.206 );
-		const yOff = rand.range( 0, 0.014 ) + ( rand.chance( 0.08 ) ? rand.range( 0.006, 0.016 ) : 0 );
-		const e0 = rand.range( - 0.06, 0.05 ), e1 = rand.range( - 0.05, 0.06 );
+		const wdt = 0.2;
+		const yOff = 0;
+		const e0 = 0, e1 = 0;
 		const xa = cx - L / 2 + e0, xb = cx + L / 2 + e1;
 		const opts = () => ( {
-			grain: 0, ry: rand.range( - 0.012, 0.012 ), rx: rand.range( - 0.022, 0.022 ), rz: rand.range( - 0.006, 0.006 ), tint: t,
+			grain: 0, ry: 0, rx: 0, rz: 0, tint: t,
 		} );
 		const walk = ( u0 ) => head ? 0 : - ( 1 + ( X - u0 ) ); // path centre along this piece
-		const zj = zc + rand.range( - 0.004, 0.004 );
-		if ( ! newer && rand.chance( 0.05 ) ) {
-
-			// split board: two pieces with a ragged gap
-			const xs = rand.range( xa + 0.4, xb - 0.4 );
-			B.box( 'wood', ( xa + xs - 0.01 ) / 2, DK - plankT / 2 - yOff, zj, xs - xa - 0.01, plankT, wdt, { ...opts(), data: WOOD( rand.next(), wth, walk( xa ), 7 ) } );
-			B.box( 'wood', ( xs + 0.012 + xb ) / 2, DK - plankT / 2 - yOff - 0.004, zj + rand.range( - 0.004, 0.004 ), xb - xs - 0.012, plankT, wdt * rand.range( 0.92, 1 ), { ...opts(), data: WOOD( rand.next(), wth, walk( xs + 0.012 ), 7 ) } );
-			return;
-
-		}
-
+		const zj = zc;
+		
 		B.box( 'wood', ( xa + xb ) / 2, DK - plankT / 2 - yOff, zj, xb - xa, plankT, wdt, { ...opts(), data: WOOD( rand.next(), wth, walk( xa ), 7 ) } );
 
 	}
@@ -284,19 +245,12 @@ export function buildPier( { B, terrain, colliders, rand, lights, inst, signB = 
 			const px = X + side * PIER.pileOff;
 			const len = zb - za;
 			const fresh = rand.chance( 0.12 );
-			B.box( 'wood', px + rand.range( - 0.01, 0.01 ), railTop + 0.022 + rand.range( - 0.012, 0.01 ), ( za + zb ) / 2, 0.2, 0.045, len + 0.16, {
-				grain: 2, rx: rand.range( - 0.006, 0.006 ), rz: rand.range( - 0.01, 0.01 ), tint: fresh ? freshTone() : tone(), data: fresh ? WOOD( rand.next(), 0.3, 0, 0 ) : pierWood( 0.7, 1 ),
+			B.box( 'wood', px, railTop + 0.022, ( za + zb ) / 2, 0.2, 0.045, len + 0.16, {
+				grain: 2, rx: 0, rz: 0, tint: fresh ? freshTone() : tone(), data: fresh ? WOOD( rand.next(), 0.3, 0, 0 ) : pierWood( 0.7, 1 ),
 			} );
 			const mx = px - side * ( PIER.pileR + 0.03 );
 			// the mid rail: a few have come off one end and hang, one or two are gone
-			const mr = rand.next();
-			if ( mr > 0.04 ) {
-
-				const drop = mr < 0.1 ? rand.range( 0.15, 0.35 ) : 0;
-				const dropA = rand.chance( 0.5 );
-				B.beam( 'wood', [ mx, DK + 0.48 + rand.range( - 0.012, 0.012 ) - ( dropA ? drop : 0 ), za - 0.05 ], [ mx, DK + 0.48 + rand.range( - 0.012, 0.012 ) - ( dropA ? 0 : drop ), zb + 0.05 ], 0.05, 0.14, { tint: tone(), data: pierWood( 0.7, 1 ) } );
-
-			}
+			B.beam( 'wood', [ mx, DK + 0.48, za - 0.05 ], [ mx, DK + 0.48, zb + 0.05 ], 0.05, 0.14, { tint: tone(), data: pierWood( 0.7, 1 ) } );
 			addBox( px, DK + 0.55, ( za + zb ) / 2, 0.09, 0.55, len / 2, { tag: 'pierRail' } );
 
 		}
@@ -511,9 +465,7 @@ export function buildPier( { B, terrain, colliders, rand, lights, inst, signB = 
 
 		const bx = edgeX - 0.45;
 		bollard( B, bx, DK, bz, rand.next() );
-		ropeLoop( B, bx, DK + 0.36, bz, 0.155, null, rand.next() );
-		ropeCoil( B, bx - 0.75, DK, bz + ( bz < 36 ? 0.35 : - 0.35 ), 0.08, 0.3, 4, rand.next() );
-		colliders.addCylinder( bx, bz, 0.22, DK, DK + 0.5, { tag: 'bollard' } );
+				colliders.addCylinder( bx, bz, 0.22, DK, DK + 0.5, { tag: 'bollard' } );
 		info.bollards.push( new Vector3( bx, DK + 0.45, bz ) );
 
 	}
@@ -575,41 +527,8 @@ export function buildPier( { B, terrain, colliders, rand, lights, inst, signB = 
 	lifeRing( B, 55.8, DK + 0.58, rowsZ[ 2 ] + 0.12, 0, rand.next() );
 	cleaningTable( B, 58.3, DK, z1 - 0.9, 0, rand.next() );
 	addBox( 58.3, DK + 0.45, z1 - 0.9, 0.7, 0.45, 0.35, { tag: 'table' } );
-	bucket( B, 59.3, DK, z1 - 0.75, C.blue, rand.next() );
-	for ( const [ rx, lean ] of [ [ 56.55, 0.35 ], [ 56.9, 0.28 ] ] ) {
-
-		const base = [ rx, DK + 0.01, rowsZ[ 2 ] - 0.25 ];
-		const tip = [ rx + 0.25, DK + 2.6, rowsZ[ 2 ] + 2.6 * Math.tan( lean ) ];
-		B.rod( 'hard', base, tip, 0.016, 0.005, { segs: 5, tint: lin( 0x2a2a2a ), data: HARD( rand.next(), 0, 0.3, 0.35 ) } );
-		B.cyl( 'hard', rx + 0.02, DK + 0.35, rowsZ[ 2 ] - 0.18, 0.04, 0.04, 0.05, { segs: 8, rz: Math.PI / 2, capBot: true, tint: C.galv, data: HARD( rand.next(), 0, 0.8, 0.35 ) } );
-
-	}
-
-	// deck clutter (instanced crates / traps / barrels)
-	const crate = ( x, y, z, ry ) => inst.add( 'crate', x, y, z, ry, [ rand.range( 0.85, 1.1 ), rand.range( 0.85, 1.05 ), rand.range( 0.82, 1.0 ) ] );
-	crate( 49.25, DK, 34.35, 0.05 );
-	crate( 49.25, DK, 34.8, - 0.04 );
-	crate( 49.95, DK, 34.55, 1.57 );
-	crate( 49.3, DK + 0.4, 34.55, 0.2 );
-	addBox( 49.55, DK + 0.4, 34.6, 0.55, 0.4, 0.45, { tag: 'crates' } );
-
-	const trap = ( x, y, z, ry ) => inst.add( 'trap', x, y, z, ry, [ rand.range( 0.85, 1.05 ), rand.range( 0.85, 1.0 ), rand.range( 0.8, 0.95 ) ] );
-	trap( 50.1, DK, 38.55, 0.02 );
-	trap( 50.1, DK, 39.1, - 0.03 );
-	trap( 51.05, DK, 38.6, 0.05 );
-	trap( 50.3, DK + 0.31, 38.8, 0.12 );
-	trap( 50.5, DK + 0.31, 38.75, 1.2 );
-	addBox( 50.55, DK + 0.35, 38.8, 0.75, 0.35, 0.5, { tag: 'traps' } );
-
-	inst.add( 'barrel', 48.75, DK, 36.1, 0.3, [ 0.9, 0.85, 0.8 ] );
-	inst.add( 'barrel', 49.4, DK, 36.75, 1.1, [ 1.05, 1.0, 0.95 ] );
-	colliders.addCylinder( 48.75, 36.1, 0.32, DK, DK + 0.9, { tag: 'barrel' } );
-	colliders.addCylinder( 49.4, 36.75, 0.32, DK, DK + 0.9, { tag: 'barrel' } );
-
-	// floats hanging on the west rail
-	buoyString( B, [ hx0 + 0.12, railTop + 0.02, 34.0 ], [ hx0 + 0.12, railTop + 0.02, 35.9 ], 4, rand, 0.22 );
-	buoyString( B, [ hx0 + 0.12, railTop + 0.02, 37.1 ], [ hx0 + 0.12, railTop + 0.02, 38.9 ], 3, rand, 0.18 );
-
+	
+	
 	// head lamps
 	for ( const [ lx, lz, yaw ] of [ [ hx0 + 0.55, z1 - 0.55, 3 * Math.PI / 4 ], [ hx1 - 0.6, z1 - 0.55, - 3 * Math.PI / 4 ], [ hx0 + 0.55, zH + 0.6, Math.PI / 4 ] ] ) {
 
@@ -619,29 +538,6 @@ export function buildPier( { B, terrain, colliders, rand, lights, inst, signB = 
 		colliders.addCylinder( lx, lz, 0.1, DK, DK + 3.2, { tag: 'lampPost' } );
 
 	}
-
-	// a few things along the walkway: gear left where it was last used
-	bucket( B, X + 0.9, DK, - 21.3, C.white, rand.next() );
-	bucket( B, X - 0.95, DK, 12.6, C.orange, rand.next() );
-	ropeCoil( B, X + 0.85, DK, - 33.0, 0.07, 0.24, 3, rand.next(), C.ropeDark );
-	ropeCoil( B, X - 0.85, DK, 21.5, 0.06, 0.22, 4, rand.next() );
-	for ( const [ cz, side ] of [ [ - 47.3, 1 ], [ - 15.4, - 1 ], [ 27.8, 1 ] ] ) {
-
-		// a cleat on the deck edge with a line still made fast, trailing over the side
-		const cx = X + side * ( halfW - 0.18 );
-		cleat( B, cx, DK, cz, 0, rand.next() );
-		ropeLoop( B, cx, DK + 0.06, cz, 0.08, [ X + side * ( halfW + 0.35 ), DK - 1.4, cz + rand.range( - 0.4, 0.4 ) ], rand.next() );
-
-	}
-
-	inst.add( 'crate', X - 0.95, DK, - 3.1, 1.4, [ 0.9, 0.85, 0.8 ] );
-	inst.add( 'crate', X - 0.92, DK + 0.4, - 3.05, 1.2, [ 1.0, 0.95, 0.9 ] );
-	colliders.addBox( _v.set( X - 0.95, DK + 0.4, - 3.1 ), _h.set( 0.3, 0.4, 0.35 ), 0, { tag: 'crate' } );
-	inst.add( 'trap', X + 0.8, DK, 30.4, 0.05, [ 0.9, 0.9, 0.85 ] );
-	colliders.addBox( _v.set( X + 0.8, DK + 0.25, 30.4 ), _h.set( 0.48, 0.3, 0.28 ), 0.05, { tag: 'trap' } );
-	ropeCoil( B, X - 0.8, DK, 4.5, 0.07, 0.26, 4, rand.next(), C.ropeBlue );
-	inst.add( 'crate', X + 0.95, DK, - 40.2, 0.1, [ 1, 0.95, 0.9 ] );
-	colliders.addBox( _v.set( X + 0.95, DK + 0.2, - 40.2 ), _h.set( 0.33, 0.2, 0.24 ), 0.1, { tag: 'crate' } );
 
 	return info;
 
