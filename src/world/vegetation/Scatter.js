@@ -672,7 +672,7 @@ export function buildGrassMask( site ) {
 
 			// tall meadow grass on the open ground, thinning into the forest; trodden near houses
 			const house = site.hasVillage ? 1 - 0.55 * ( 1 - smoothstep( 3, 9, od ) ) : ( 1 - 0.85 * ( 1 - smoothstep( RULES.villageRadius - 6, RULES.villageRadius + 4, site.villageDist( x, z ) ) ) );
-			const meadow = smoothstep( 2.5, 3.5, c.h ) * ( 1 - smoothstep( 0.45, 0.85, c.forest ) ) * ( 1 - smoothstep( 0.3, 0.7, c.sand ) ) * house
+			const meadow = smoothstep( 2.5, 3.5, c.h ) * ( 1 - smoothstep( 0.3, 0.7, c.sand ) ) * house
 				* ( 0.75 + 0.25 * smoothstep( - 0.4, 0.3, clump ) );
 
 			// Backshore vegetation edge (in the bay): driven by the ground height above the sea, so it
