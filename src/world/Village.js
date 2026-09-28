@@ -105,7 +105,7 @@ export class Village {
 
 			const B = s.harbor ? this.harbor : this.town;
 			const res = buildHouse( ctx( B ), s );
-			this.buildings.push( { name: s.name, x: s.x, z: s.z, floorY: res.floorY, roofTop: res.roofTop, stilts: s.foundation === 'stilts', footprint: res.footprint } );
+			this.buildings.push( { name: s.name, x: s.x, z: s.z, yaw: s.yaw || 0, w: s.w, d: s.d, floorY: res.floorY, roofTop: res.roofTop, stilts: s.foundation === 'stilts', modernGlass: !!s.modernGlass, footprint: res.footprint } );
 			this.footprints.push( res.footprint );
 
 		}
@@ -113,7 +113,7 @@ export class Village {
 		for ( const s of specs.sheds ) {
 
 			const res = buildShed( ctx( this.town ), s );
-			this.buildings.push( { name: s.name, x: s.x, z: s.z, floorY: res.floorY, roofTop: res.roofTop, stilts: false, footprint: res.footprint } );
+			this.buildings.push( { name: s.name, x: s.x, z: s.z, yaw: s.yaw || 0, w: s.w ?? 1.9, d: s.d ?? 1.7, floorY: res.floorY, roofTop: res.roofTop, stilts: false, modernGlass: false, footprint: res.footprint } );
 			this.footprints.push( res.footprint );
 
 		}
@@ -124,7 +124,7 @@ export class Village {
 			buildBoardwalk( ctx( this.town ), [ [ 46.8, - 97.8 ], [ 53.5, - 98.5 ], [ 61.7, - 99.1 ] ], { width: 1.1, lift: 0.2, lightEvery: 1e9 } ),
 		];
 
-		this.footprints.push( buildBoathouse( ctx( this.harbor ), specs.boathouse ).footprint );
+		// this.footprints.push( buildBoathouse( ctx( this.harbor ), specs.boathouse ).footprint );
 
 		this._beachProps( ctx( this.harbor ) );
 		this._villageProps( ctx( this.town ) );
@@ -768,6 +768,41 @@ export class Village {
 
 		const shadowCasters = this.meshes.filter( ( m ) => m.castShadow ).length;
 		return { triangles, drawCalls, shadowCasters, shadowTriangles: this.shadowTriangles, lights: this.lights.length, textureMB: this.textures.bytes / 1048576, bakeMs: this.textures.bakeMs, baked: this.textures.baked };
+
+	}
+
+	getHouseOcclusion( pos ) {
+
+		let maxOcc = 0;
+		for ( const b of this.buildings ) {
+
+			if ( ! b.modernGlass ) continue; // por enquanto apenas as casas navegáveis abafam som
+			const d = Math.hypot( pos.x - b.x, pos.z - b.z );
+			const r = Math.hypot( b.w, b.d ) / 2;
+			if ( d > r + 2 ) continue;
+
+			const dx = pos.x - b.x;
+			const dz = pos.z - b.z;
+			const c = Math.cos( -b.yaw );
+			const s = Math.sin( -b.yaw );
+			const lx = dx * c - dz * s;
+			const lz = dx * s + dz * c;
+
+			if ( Math.abs( lx ) <= b.w / 2 && pos.y >= b.floorY - 0.2 && pos.y <= b.roofTop ) {
+
+				// Dentro da largura da casa e na altura correta.
+				// O fundo da casa é lz = -d/2, a frente é lz = d/2.
+				if ( lz <= b.d / 2 && lz >= -b.d / 2 ) {
+					// 0.0 na soleira (lz = d/2), 1.0 quando lz < d/2 - 0.8
+					const depthIn = b.d / 2 - lz;
+					const occ = Math.max( 0, Math.min( 1, depthIn / 0.8 ) );
+					maxOcc = Math.max( maxOcc, occ );
+				}
+
+			}
+
+		}
+		return maxOcc;
 
 	}
 

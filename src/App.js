@@ -727,6 +727,7 @@ fn terrainWetness( xz: vec2f, h: f32 ) -> vec2f {
 			surfIntensity: Math.min( 1, this.shore.amplitude.value / 0.6 ),
 			distanceToShore: Math.abs( coast ),
 			coastDistance: coast,
+			houseOcclusion: this.village ? this.village.getHouseOcclusion( p ) : 0,
 			waveHeight: this.shore.amplitude.value * 2,
 			windSpeed: G.windSpeed.value,
 			windDir: G.windDir.value,
